@@ -6,46 +6,157 @@ import {
   Maximize2, Minimize2, X, Key, Target, MousePointerClick,
   Check, XCircle, RotateCcw, ChevronDown, ChevronUp,
   Zap, Eye, EyeOff, CheckSquare, Square, Undo2, History,
-  HelpCircle
+  HelpCircle, Lightbulb, Mic
 } from 'lucide-react'
 import { generateWithActions, executeActions, getProactiveSuggestions, THEME_PRESETS } from '../../lib/aiService'
 import { humanizePath, humanizeAction, getElementDescription } from '../../lib/pathLabels'
+import { 
+  generateLunaMessage, 
+  generateBatchMessage, 
+  generateGreeting, 
+  generateThinkingMessage,
+  generateContextualSuggestion,
+  generateErrorMessage,
+  generateFlowResponse,
+  getFlowSuggestions,
+  checkMilestone,
+  LUNA_MOODS 
+} from '../../lib/lunaMessages'
 import useAIHistoryStore from '../../stores/aiHistoryStore'
 import useUserPreferencesStore from '../../stores/userPreferencesStore'
 import OnboardingModal from './OnboardingModal'
 import PreviewComparison from './PreviewComparison'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AI ASSISTANT V4 - Sprint 1: Preview, Messages humanisés, Onboarding
+// AI ASSISTANT V6 - Premium Design "Apple-like"
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Luna personality phrases
-const LUNA_GREETINGS = [
-  "Salut ! Je suis Luna 🌙 Prête à créer avec toi !",
-  "Hey ! Luna à ton service ✨ Qu'est-ce qu'on fait ?",
-  "Coucou ! 🌙 On rend ton site incroyable ?",
-]
+// Inject CSS animations
+const injectStyles = () => {
+  if (document.getElementById('luna-premium-styles')) return
+  
+  const style = document.createElement('style')
+  style.id = 'luna-premium-styles'
+  style.textContent = `
+    /* Gradient animé pour le fond */
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    /* Anneau gradient animé pour avatar */
+    @keyframes ringRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Pulse subtil */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.02); }
+    }
+    
+    /* Glow pulse */
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.5); }
+    }
+    
+    /* Typing dots */
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
+    
+    /* Success particles */
+    @keyframes particleFade {
+      0% { opacity: 1; transform: scale(1) translateY(0); }
+      100% { opacity: 0; transform: scale(0.5) translateY(-20px); }
+    }
+    
+    /* Gradient border animation */
+    @keyframes borderGradient {
+      0%, 100% { border-color: rgba(168, 85, 247, 0.5); }
+      50% { border-color: rgba(236, 72, 153, 0.5); }
+    }
+    
+    .luna-gradient-bg {
+      background: linear-gradient(-45deg, #1e1b4b, #0f172a, #1e1b4b, #0f172a);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+    }
+    
+    .luna-ring-animated {
+      animation: ringRotate 3s linear infinite;
+    }
+    
+    .luna-glow {
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+    
+    .luna-typing-dot {
+      animation: typingBounce 1.4s ease-in-out infinite;
+    }
+    
+    .luna-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .luna-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    .luna-input-focus {
+      transition: all 0.3s ease;
+    }
+    
+    .luna-input-focus:focus-within {
+      animation: borderGradient 2s ease infinite;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+    }
+    
+    .luna-glassmorphism {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    
+    .luna-button-glow:hover {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    .luna-particle {
+      animation: particleFade 0.6s ease-out forwards;
+    }
+  `
+  document.head.appendChild(style)
+}
 
-const LUNA_SUCCESS = [
-  "Et voilà ! ✨",
-  "C'est fait ! 🎉",
-  "Parfait ! 💫",
-  "Tadaa ! ✨",
-]
-
-const LUNA_THINKING = [
-  "Je réfléchis... 🤔",
-  "Hmm, laisse-moi voir... 💭",
-  "Un instant... ✨",
-]
-
+// Fire confetti avec style
 const fireConfetti = () => {
+  // Main burst
   confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 },
+    particleCount: 80,
+    spread: 60,
+    origin: { y: 0.7 },
+    colors: ['#a855f7', '#ec4899', '#8b5cf6', '#f472b6'],
     zIndex: 9999
   })
+  // Side bursts
+  setTimeout(() => {
+    confetti({
+      particleCount: 30,
+      angle: 60,
+      spread: 40,
+      origin: { x: 0, y: 0.7 },
+      colors: ['#a855f7', '#ec4899'],
+      zIndex: 9999
+    })
+    confetti({
+      particleCount: 30,
+      angle: 120,
+      spread: 40,
+      origin: { x: 1, y: 0.7 },
+      colors: ['#a855f7', '#ec4899'],
+      zIndex: 9999
+    })
+  }, 150)
 }
 
 // Quick actions
@@ -75,6 +186,7 @@ export default function AIAssistant({
   const [showHistory, setShowHistory] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPreviewComparison, setShowPreviewComparison] = useState(false)
+  const [sessionActionCount, setSessionActionCount] = useState(0)
   
   // AI History Store
   const { 
@@ -95,12 +207,19 @@ export default function AIAssistant({
     getActivityLabel,
     incrementInteraction,
     lunaGreeted,
-    markLunaGreeted
+    markLunaGreeted,
+    tone: userTone,
+    activityCategory
   } = useUserPreferencesStore()
   
   // Refs
   const inputRef = useRef(null)
   const messagesEndRef = useRef(null)
+
+  // Inject premium styles on mount
+  useEffect(() => {
+    injectStyles()
+  }, [])
 
   // Check if onboarding needed on first expand
   useEffect(() => {
@@ -114,12 +233,12 @@ export default function AIAssistant({
   // Luna greeting on first interaction after onboarding
   useEffect(() => {
     if (onboardingCompleted && !lunaGreeted && conversation.length === 0) {
-      const greeting = LUNA_GREETINGS[Math.floor(Math.random() * LUNA_GREETINGS.length)]
       const activity = getActivityLabel()
-      const welcomeMsg = activity 
-        ? `${greeting} Je vois que tu es dans le domaine "${activity}" - je vais adapter mes suggestions !`
-        : greeting
-      addMessage('assistant', welcomeMsg)
+      const greetingData = generateGreeting({ 
+        tone: userTone || 'friendly', 
+        activity 
+      })
+      addMessage('assistant', greetingData.text, { mood: greetingData.mood })
       markLunaGreeted()
     }
   }, [onboardingCompleted, lunaGreeted, conversation.length])
@@ -250,6 +369,10 @@ export default function AIAssistant({
     // Appliquer les changements
     onApplyChanges(updatedContent)
     
+    // Incrémenter le compteur de session
+    const newActionCount = sessionActionCount + actions.length
+    setSessionActionCount(newActionCount)
+    
     // Enregistrer dans l'historique IA
     pushAction({
       batchId,
@@ -259,9 +382,21 @@ export default function AIAssistant({
       snapshotBefore
     })
     
-    // Message de confirmation humanisé avec personnalité Luna
-    const successCount = results.filter(r => r.success).length
-    const lunaSuccess = LUNA_SUCCESS[Math.floor(Math.random() * LUNA_SUCCESS.length)]
+    // Générer la réponse avec le flow conversationnel
+    const activity = getActivityLabel()
+    const currentSection = actions[0]?.section || actions[0]?.path?.split('.')[0] || activeSection
+    
+    const flowResponse = generateFlowResponse(
+      actions.length > 1 ? { type: 'batch', actions } : actions[0],
+      {
+        tone: userTone || 'friendly',
+        activity,
+        activityCategory,
+        actionCount: newActionCount,
+        siteContent: updatedContent,
+        section: currentSection
+      }
+    )
     
     // Humaniser les labels des résultats
     const humanizedResults = results.map(r => ({
@@ -269,14 +404,32 @@ export default function AIAssistant({
       label: humanizeAction({ type: 'update', label: r.label, path: r.path })
     }))
     
-    addMessage('assistant', `${lunaSuccess} ${successCount} modification(s) appliquée(s)`, {
+    // Convertir les flowSuggestions en options cliquables
+    const flowOptions = flowResponse.flowSuggestions?.map((s, i) => ({
+      id: `flow-${i}`,
+      label: s.label,
+      value: s.value,
+      emoji: s.emoji
+    })) || []
+    
+    addMessage('assistant', flowResponse.text, {
       actions: humanizedResults,
-      canRollback: true
+      canRollback: true,
+      mood: flowResponse.mood,
+      suggestion: flowResponse.suggestion,
+      options: flowOptions,
+      isClosing: flowResponse.isClosing,
+      milestone: flowResponse.milestone
     })
+    
+    // Célébration si milestone majeur
+    if (flowResponse.milestone?.isMajor) {
+      fireConfetti()
+    }
     
     setPendingActions(null)
     setShowPreviewComparison(false)
-  }, [siteContent, onApplyChanges, pushAction, addMessage, input])
+  }, [siteContent, onApplyChanges, pushAction, addMessage, input, userTone, activityCategory, getActivityLabel, sessionActionCount, activeSection])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // APPLY SELECTED ACTIONS (partial)
@@ -408,7 +561,10 @@ export default function AIAssistant({
     const elementDesc = selectedElement ? getElementDescription(selectedElement) : null
     
     return (
-      <div className="h-full flex flex-col bg-gradient-to-b from-slate-900 to-slate-950">
+      <div className="h-full flex flex-col luna-gradient-bg relative overflow-hidden">
+        {/* Glow effect en haut */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+        
         {/* Onboarding Modal */}
         <OnboardingModal 
           isOpen={showOnboarding}
@@ -416,86 +572,127 @@ export default function AIAssistant({
           onComplete={() => setShowOnboarding(false)}
         />
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20"
-              animate={{ scale: isLoading ? [1, 1.1, 1] : 1 }}
-              transition={{ duration: 1, repeat: isLoading ? Infinity : 0 }}
-            >
-              <Sparkles className="w-5 h-5 text-white" />
-            </motion.div>
-            <div>
-              <h2 className="font-semibold text-white flex items-center gap-2">
-                Luna
-                <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">IA</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                {selectedElement ? (
-                  <span className="text-green-400 flex items-center gap-1">
-                    <Target className="w-3 h-3" />
-                    {elementDesc?.label || selectedElement.field}
-                  </span>
-                ) : activeSection ? (
-                  <span className="text-blue-400">Section: {activeSection}</span>
-                ) : (
-                  'Ton assistante créative 🌙'
-                )}
-              </p>
+        {/* Header - Glassmorphism */}
+        <div className="relative z-10 luna-glassmorphism border-b border-white/5">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              {/* Avatar Luna Premium avec anneau animé */}
+              <div className="relative">
+                {/* Anneau gradient animé */}
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 luna-ring-animated opacity-75 blur-sm" />
+                <motion.div 
+                  className="relative w-11 h-11 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg"
+                  animate={isLoading ? { scale: [1, 1.05, 1] } : {}}
+                  transition={{ duration: 1.5, repeat: isLoading ? Infinity : 0, ease: 'easeInOut' }}
+                >
+                  <Sparkles className="w-5 h-5 text-white" />
+                </motion.div>
+                {/* Status indicator */}
+                <motion.div 
+                  className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900"
+                  animate={{ 
+                    backgroundColor: isLoading ? ['#a855f7', '#ec4899', '#a855f7'] : '#22c55e'
+                  }}
+                  transition={{ duration: 1, repeat: isLoading ? Infinity : 0 }}
+                />
+              </div>
+              <div>
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  Luna
+                  <motion.span 
+                    className="text-[10px] bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 px-2 py-0.5 rounded-full border border-purple-500/20"
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    IA
+                  </motion.span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {selectedElement ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <Target className="w-3 h-3" />
+                      {elementDesc?.label || selectedElement.field}
+                    </span>
+                  ) : activeSection ? (
+                    <span className="text-purple-300/80">Section: {activeSection}</span>
+                  ) : (
+                    <span className="text-slate-500">Ton assistante créative</span>
+                  )}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            {canRollback() && (
-              <button
-                onClick={handleManualRollback}
-                className="p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition"
-                title="Annuler dernière action"
+            <div className="flex items-center gap-0.5">
+              {canRollback() && (
+                <motion.button
+                  onClick={handleManualRollback}
+                  className="p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+                  title="Annuler dernière action"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Undo2 className="w-5 h-5" />
+                </motion.button>
+              )}
+              <motion.button
+                onClick={() => setShowOnboarding(true)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                title="Préférences Luna"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Undo2 className="w-5 h-5" />
-              </button>
-            )}
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-              title="Préférences Luna"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onToggleExpand}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-            >
-              <Minimize2 className="w-5 h-5" />
-            </button>
+                <HelpCircle className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                onClick={() => setShowSettings(true)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Settings className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                onClick={onToggleExpand}
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Minimize2 className="w-5 h-5" />
+              </motion.button>
+            </div>
           </div>
         </div>
 
-        {/* Focus Mode Indicator - Humanisé */}
-        {selectedElement && (
-          <div className="px-4 py-2 bg-green-500/10 border-b border-green-500/20">
-            <div className="flex items-center gap-2">
-              <MousePointerClick className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-300">
-                Focus: <strong>{elementDesc?.label || selectedElement.field}</strong>
-              </span>
-              {elementDesc?.preview && (
-                <span className="text-xs text-green-400/60 ml-auto truncate max-w-[150px]">
-                  {elementDesc.preview}
+        {/* Focus Mode Indicator - Premium */}
+        <AnimatePresence>
+          {selectedElement && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="relative z-10 px-4 py-2.5 bg-emerald-500/10 border-b border-emerald-500/20"
+            >
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <MousePointerClick className="w-4 h-4 text-emerald-400" />
+                </motion.div>
+                <span className="text-sm text-emerald-300">
+                  Focus: <strong>{elementDesc?.label || selectedElement.field}</strong>
                 </span>
-              )}
-            </div>
-          </div>
-        )}
+                {elementDesc?.preview && (
+                  <span className="text-xs text-emerald-400/50 ml-auto truncate max-w-[150px]">
+                    {elementDesc.preview}
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Messages - Zone principale */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10">
           {conversation.length === 0 ? (
             <WelcomeScreen 
               suggestions={suggestions} 
@@ -509,6 +706,7 @@ export default function AIAssistant({
                   key={msg.id || i}
                   message={msg}
                   onOptionClick={handleOptionClick}
+                  index={i}
                 />
               ))}
               
@@ -539,30 +737,62 @@ export default function AIAssistant({
             </>
           )}
           
-          {isLoading && (
-            <div className="flex items-center gap-3">
+          {/* Loading - Typing Indicator Premium */}
+          <AnimatePresence>
+            {isLoading && (
               <motion.div 
-                className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-start gap-3"
               >
-                <Sparkles className="w-4 h-4 text-white" />
+                {/* Avatar avec pulse */}
+                <div className="relative">
+                  <motion.div 
+                    className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </motion.div>
+                  <motion.div 
+                    className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-purple-400 rounded-full border-2 border-slate-900"
+                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                </div>
+                {/* Typing bubble */}
+                <div className="px-5 py-3.5 bg-gradient-to-br from-slate-800/90 to-slate-800/70 rounded-2xl rounded-tl-md shadow-lg border border-white/5">
+                  <div className="flex items-center gap-1.5">
+                    <motion.span 
+                      className="w-2 h-2 bg-purple-400 rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.span 
+                      className="w-2 h-2 bg-purple-400 rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                    />
+                    <motion.span 
+                      className="w-2 h-2 bg-purple-400 rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                    />
+                  </div>
+                </div>
               </motion.div>
-              <div className="px-4 py-3 bg-slate-800 rounded-2xl rounded-tl-sm">
-                <p className="text-sm text-slate-400">
-                  {LUNA_THINKING[Math.floor(Date.now() / 2000) % LUNA_THINKING.length]}
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
           
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-slate-700/50">
+        {/* Input - Premium Design */}
+        <div className="relative z-10 p-4 luna-glassmorphism border-t border-white/5">
           <div className="flex items-center gap-2">
-            <div className="flex-1 relative">
+            {/* Input wrapper avec effet gradient */}
+            <div className="flex-1 relative luna-input-focus rounded-xl group">
               <input
                 ref={inputRef}
                 type="text"
@@ -572,35 +802,54 @@ export default function AIAssistant({
                 placeholder={
                   selectedElement 
                     ? `Modifier "${elementDesc?.label || selectedElement.field}"...` 
-                    : "Ex: Mets un fond sombre sur le hero"
+                    : "Dis-moi ce que tu veux changer..."
                 }
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none"
+                className="relative w-full px-4 py-3.5 pr-12 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 outline-none transition-all"
                 disabled={isLoading}
               />
+              {/* Mic icon (decorative) */}
+              <button 
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-purple-400 transition-colors rounded-lg hover:bg-white/5"
+                type="button"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
             </div>
-            <button
+            {/* Send button premium */}
+            <motion.button
               onClick={() => handleSend()}
               disabled={isLoading || !input.trim()}
-              className="p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white rounded-xl transition disabled:opacity-50"
+              className="relative p-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25 luna-button-glow"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               <Send className="w-5 h-5" />
-            </button>
+            </motion.button>
           </div>
           
-          {/* Quick suggestions */}
+          {/* Quick suggestions - Premium */}
           {suggestions.length > 0 && !pendingActions && (
-            <div className="flex flex-wrap gap-2 mt-3">
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap gap-2 mt-3"
+            >
               {suggestions.map((s, i) => (
-                <button
+                <motion.button
                   key={i}
                   onClick={() => handleSend(s.text)}
                   disabled={isLoading}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition"
+                  className="px-3.5 py-2 bg-white/5 hover:bg-purple-500/20 text-slate-300 hover:text-white rounded-xl text-xs transition-all border border-white/5 hover:border-purple-500/30 disabled:opacity-50"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   {s.emoji} {s.text}
-                </button>
+                </motion.button>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -619,15 +868,24 @@ export default function AIAssistant({
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER - COMPACT MODE (Bottom Bar)
+  // RENDER - COMPACT MODE (Bottom Bar) - Premium Design
   // ═══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 bg-slate-900 border-t border-slate-800">
-      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-        <Sparkles className="w-4 h-4 text-white" />
+    <div className="flex items-center gap-2 px-4 py-3 luna-glassmorphism border-t border-white/5">
+      {/* Avatar Luna Mini */}
+      <div className="relative">
+        <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 opacity-50 blur-sm" />
+        <motion.div 
+          className="relative w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Sparkles className="w-4 h-4 text-white" />
+        </motion.div>
       </div>
 
+      {/* Input Premium */}
       <div className="flex-1 relative">
         <input
           ref={inputRef}
@@ -635,51 +893,78 @@ export default function AIAssistant({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedElement ? `Modifier "${selectedElement.label}"...` : "Demande à l'IA..."}
-          className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+          placeholder={selectedElement ? `Modifier "${selectedElement.label}"...` : "Demande à Luna..."}
+          className="w-full px-4 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 outline-none text-sm transition-all"
           disabled={isLoading}
         />
         {isLoading && (
-          <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400 animate-spin" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <motion.span 
+              className="w-1.5 h-1.5 bg-purple-400 rounded-full"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
+            />
+            <motion.span 
+              className="w-1.5 h-1.5 bg-purple-400 rounded-full"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, delay: 0.1 }}
+            />
+            <motion.span 
+              className="w-1.5 h-1.5 bg-purple-400 rounded-full"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
+            />
+          </div>
         )}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions Premium */}
       <div className="hidden lg:flex items-center gap-1">
         {QUICK_ACTIONS.map((action, i) => (
-          <button
+          <motion.button
             key={i}
             onClick={() => handleSend(action.prompt)}
             disabled={isLoading}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition disabled:opacity-50"
+            className="px-3 py-2 bg-white/5 hover:bg-purple-500/20 text-slate-300 hover:text-white rounded-xl text-xs transition-all border border-white/5 hover:border-purple-500/30 disabled:opacity-50"
             title={action.label}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             {action.emoji}
-          </button>
+          </motion.button>
         ))}
       </div>
 
-      <button
+      {/* Send Button Premium */}
+      <motion.button
         onClick={() => handleSend()}
         disabled={isLoading || !input.trim()}
-        className="p-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition disabled:opacity-50"
+        className="p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all disabled:opacity-40 shadow-lg shadow-purple-500/20"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Send className="w-4 h-4" />
-      </button>
+      </motion.button>
 
-      <button
+      {/* Expand Button */}
+      <motion.button
         onClick={onToggleExpand}
-        className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+        className="p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Maximize2 className="w-4 h-4" />
-      </button>
+      </motion.button>
 
-      <button
+      {/* Settings Button */}
+      <motion.button
         onClick={() => setShowSettings(true)}
-        className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+        className="p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Settings className="w-4 h-4" />
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {showSettings && (
@@ -695,50 +980,107 @@ export default function AIAssistant({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WELCOME SCREEN
+// WELCOME SCREEN - Premium Design
 // ═══════════════════════════════════════════════════════════════════════════
 
 function WelcomeScreen({ suggestions, onSuggestionClick, selectedElement }) {
   return (
-    <div className="text-center py-8">
-      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
-        <Sparkles className="w-8 h-8 text-white" />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-center py-8 px-4"
+    >
+      {/* Avatar Luna Premium avec halo */}
+      <div className="relative mx-auto mb-6 w-20 h-20">
+        {/* Halo animé */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-2xl blur-xl opacity-40"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        {/* Avatar principal */}
+        <motion.div 
+          className="relative w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/30"
+          whileHover={{ scale: 1.05, rotate: 5 }}
+          transition={{ type: 'spring', damping: 15 }}
+        >
+          <Sparkles className="w-10 h-10 text-white" />
+        </motion.div>
+        {/* Status dot */}
+        <motion.div 
+          className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-slate-900"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
       </div>
       
       {selectedElement ? (
         <>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            Focus sur "{selectedElement.label}"
-          </h3>
-          <p className="text-slate-400 text-sm mb-6">
-            Dis-moi ce que tu veux changer !
-          </p>
+          <motion.h3 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-xl font-semibold text-white mb-2"
+          >
+            Focus : {selectedElement.label}
+          </motion.h3>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-400 text-sm mb-6"
+          >
+            Dis-moi ce que tu veux modifier ✨
+          </motion.p>
         </>
       ) : (
         <>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            Comment puis-je t'aider ?
-          </h3>
-          <p className="text-slate-400 text-sm mb-6">
-            Décris ce que tu veux modifier
-          </p>
+          <motion.h3 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-xl font-semibold text-white mb-2"
+          >
+            Hey ! Je suis Luna 👋
+          </motion.h3>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-400 text-sm mb-6"
+          >
+            Ton assistante créative. Décris ce que tu veux changer !
+          </motion.p>
         </>
       )}
       
       {suggestions.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-wrap justify-center gap-2"
+        >
           {suggestions.map((s, i) => (
-            <button
+            <motion.button
               key={i}
               onClick={() => onSuggestionClick(s.text)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition"
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.4 + i * 0.08 }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              className="px-4 py-2.5 bg-white/5 hover:bg-purple-500/20 text-slate-300 hover:text-white rounded-xl text-sm transition-colors border border-white/5 hover:border-purple-500/30 shadow-sm"
             >
               {s.emoji} {s.text}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -897,73 +1239,198 @@ function PendingActionsPanel({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MESSAGE BUBBLE
+// MESSAGE BUBBLE - Premium Design
 // ═══════════════════════════════════════════════════════════════════════════
 
-function MessageBubble({ message, onOptionClick }) {
+function MessageBubble({ message, onOptionClick, index = 0 }) {
   const isUser = message.role === 'user'
+  const mood = message.mood
+
+  // Animation variants
+  const bubbleVariants = {
+    hidden: { 
+      opacity: 0, 
+      x: isUser ? 20 : -20,
+      scale: 0.95 
+    },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      scale: 1,
+      transition: {
+        type: 'spring',
+        damping: 25,
+        stiffness: 300
+      }
+    }
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={bubbleVariants}
+      initial="hidden"
+      animate="visible"
       className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-        isUser 
-          ? 'bg-slate-700' 
-          : 'bg-gradient-to-br from-purple-500 to-indigo-600'
-      }`}>
-        {isUser ? <User className="w-4 h-4 text-slate-300" /> : <Bot className="w-4 h-4 text-white" />}
+      {/* Avatar Premium */}
+      <div className="relative flex-shrink-0">
+        {/* Anneau gradient pour Luna */}
+        {!isUser && (
+          <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 opacity-60 blur-[2px] luna-ring-animated" />
+        )}
+        <motion.div 
+          className={`relative w-9 h-9 rounded-xl flex items-center justify-center ${
+            isUser 
+              ? 'bg-slate-700/80 border border-white/10' 
+              : 'bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg shadow-purple-500/20'
+          }`}
+          whileHover={{ scale: 1.05 }}
+        >
+          {isUser ? (
+            <User className="w-4 h-4 text-slate-300" />
+          ) : (
+            <Sparkles className="w-4 h-4 text-white" />
+          )}
+        </motion.div>
+        {/* Mood emoji avec bounce */}
+        {!isUser && mood && (
+          <motion.div 
+            initial={{ scale: 0, y: 5 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 10, delay: 0.2 }}
+            className="absolute -bottom-1.5 -right-1.5 text-sm drop-shadow-lg"
+          >
+            {mood.emoji}
+          </motion.div>
+        )}
       </div>
 
       <div className={`max-w-[80%] ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block px-4 py-3 rounded-2xl ${
-          isUser 
-            ? 'bg-purple-600 text-white rounded-tr-sm' 
-            : 'bg-slate-800 text-slate-200 rounded-tl-sm'
-        }`}>
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        </div>
+        {/* Milestone badge - Premium */}
+        {message.milestone?.isMajor && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.5, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 15 }}
+            className="mb-2 inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-full shadow-lg shadow-amber-500/10"
+          >
+            <motion.span 
+              className="text-amber-400"
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              🏆
+            </motion.span>
+            <span className="text-xs font-medium text-amber-200">
+              {message.milestone.type === 'site_ready' ? 'Site prêt !' : 
+               message.milestone.type === 'ten_actions' ? '10 modifications !' :
+               message.milestone.type === 'five_actions' ? '5 modifications !' : 
+               'Bravo !'}
+            </span>
+          </motion.div>
+        )}
+        
+        {/* Message Bubble - Premium */}
+        <motion.div 
+          className={`inline-block px-4 py-3 rounded-2xl shadow-lg ${
+            isUser 
+              ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-tr-md shadow-purple-500/20' 
+              : message.isClosing 
+                ? 'bg-gradient-to-br from-slate-800/95 to-slate-700/90 text-slate-200 rounded-tl-md border border-white/5 shadow-slate-900/50'
+                : 'bg-gradient-to-br from-slate-800/90 to-slate-800/70 text-slate-200 rounded-tl-md border border-white/5 shadow-slate-900/50'
+          }`}
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: 'spring', damping: 20 }}
+        >
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        </motion.div>
 
-        {/* Actions performed */}
+        {/* Actions performed - Premium Tags */}
         {message.actions?.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-2 flex flex-wrap gap-1.5"
+          >
             {message.actions.map((action, i) => (
-              <span 
+              <motion.span 
                 key={i}
-                className={`text-xs px-2 py-1 rounded-full ${
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 ${
                   action.success 
-                    ? 'bg-green-500/20 text-green-400' 
-                    : 'bg-red-500/20 text-red-400'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' 
+                    : 'bg-red-500/20 text-red-400 border border-red-500/20'
                 }`}
               >
-                {action.success ? '✓' : '✗'} {action.label}
-              </span>
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2 + i * 0.05, type: 'spring' }}
+                >
+                  {action.success ? '✓' : '✗'}
+                </motion.span>
+                {action.label}
+              </motion.span>
             ))}
-          </div>
+          </motion.div>
+        )}
+
+        {/* Suggestion Luna - Premium */}
+        {message.suggestion && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-2.5 flex items-start gap-2 text-xs text-purple-300/90 bg-purple-500/10 px-3 py-2.5 rounded-xl border border-purple-500/10"
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            >
+              <Lightbulb className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-purple-400" />
+            </motion.div>
+            <span>{message.suggestion}</span>
+          </motion.div>
         )}
 
         {/* Rollback indicator */}
-        {message.canRollback && (
-          <p className="text-xs text-orange-400/70 mt-1">
+        {message.canRollback && !message.suggestion && !message.options?.length && (
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-xs text-amber-400/60 mt-2"
+          >
             💡 Dis "annule" pour revenir en arrière
-          </p>
+          </motion.p>
         )}
 
-        {/* Options */}
+        {/* Options / Flow suggestions - Premium avec Stagger */}
         {message.options?.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {message.options.map((opt) => (
-              <button
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-3 flex flex-wrap gap-2"
+          >
+            {message.options.map((opt, i) => (
+              <motion.button
                 key={opt.id}
                 onClick={() => onOptionClick(opt)}
-                className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition"
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.08, type: 'spring', damping: 20 }}
+                whileHover={{ scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                className="text-xs px-3.5 py-2 bg-white/5 hover:bg-purple-500/20 text-slate-300 hover:text-white rounded-xl transition-colors border border-white/5 hover:border-purple-500/30 shadow-sm"
               >
                 {opt.emoji} {opt.label}
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
@@ -971,7 +1438,7 @@ function MessageBubble({ message, onOptionClick }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SETTINGS MODAL
+// SETTINGS MODAL - Premium Design
 // ═══════════════════════════════════════════════════════════════════════════
 
 function SettingsModal({ apiKey, onSave, onClose }) {
@@ -982,35 +1449,41 @@ function SettingsModal({ apiKey, onSave, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full"
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25 }}
+        className="luna-glassmorphism border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-              <Key className="w-5 h-5 text-purple-400" />
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-40" />
+              <div className="relative w-11 h-11 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                <Key className="w-5 h-5 text-white" />
+              </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white">Configuration IA</h3>
+              <h3 className="font-semibold text-white">Configuration</h3>
               <p className="text-xs text-slate-400">Clé API Anthropic</p>
             </div>
           </div>
-          <button
+          <motion.button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
             <label className="text-sm text-slate-400 block mb-2">Clé API</label>
             <input
@@ -1018,26 +1491,38 @@ function SettingsModal({ apiKey, onSave, onClose }) {
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder="sk-ant-..."
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/50 outline-none"
+              className="w-full px-4 py-3.5 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 outline-none transition-all"
             />
             <p className="text-xs text-slate-500 mt-2">
-              Obtiens ta clé sur <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">console.anthropic.com</a>
+              Obtiens ta clé sur{' '}
+              <a 
+                href="https://console.anthropic.com" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                console.anthropic.com
+              </a>
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <button
+          <div className="flex gap-3 pt-2">
+            <motion.button
               onClick={onClose}
-              className="flex-1 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition"
+              className="flex-1 py-3 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-all border border-white/5"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               Annuler
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => onSave(key)}
-              className="flex-1 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition"
+              className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/25"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               Sauvegarder
-            </button>
+            </motion.button>
           </div>
         </div>
       </motion.div>
