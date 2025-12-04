@@ -141,6 +141,28 @@ export const PATH_LABELS = {
   "footer.styles": "Style du pied de page",
   "footer.styles.background": "Fond du pied de page",
   "footer.styles.background.color": "Couleur de fond",
+
+  // ═══ MODULE: BOOKING (Réservation) ═══
+  "booking": "Module Réservation",
+  "booking.enabled": "Module activé",
+  "booking.title": "Titre de la réservation",
+  "booking.subtitle": "Sous-titre de la réservation",
+  "booking.buttonText": "Texte du bouton",
+  "booking.services": "Services réservables",
+  "booking.styles": "Style de la réservation",
+  "booking.styles.background": "Fond de la section",
+  "booking.styles.background.color": "Couleur de fond",
+
+  // ═══ MODULE: E-COMMERCE ═══
+  "ecommerce": "Module E-commerce",
+  "ecommerce.enabled": "Module activé",
+  "ecommerce.title": "Titre de la boutique",
+  "ecommerce.subtitle": "Sous-titre de la boutique",
+  "ecommerce.showPrices": "Afficher les prix",
+  "ecommerce.products": "Produits",
+  "ecommerce.styles": "Style de la boutique",
+  "ecommerce.styles.background": "Fond de la section",
+  "ecommerce.styles.background.color": "Couleur de fond",
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -156,7 +178,10 @@ export const SECTION_LABELS = {
   faq: "FAQ",
   cta: "Appel à l'action",
   contact: "Contact",
-  footer: "Pied de page"
+  footer: "Pied de page",
+  // Modules
+  booking: "Réservation",
+  ecommerce: "E-commerce"
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

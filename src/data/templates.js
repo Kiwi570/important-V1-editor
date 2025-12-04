@@ -90,6 +90,24 @@ export const defaultSectionStyles = {
   footer: {
     background: { color: '#1a1a1a' },
     textColor: '#ffffff'
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MODULES STYLES
+  // ═══════════════════════════════════════════════════════════════════════════
+  booking: {
+    background: { color: '#f9fafb' },
+    padding: { vertical: 80 },
+    cardBg: '#ffffff',
+    cardRadius: 16,
+    accentColor: null
+  },
+  ecommerce: {
+    background: { color: '#ffffff' },
+    padding: { vertical: 80 },
+    cardBg: '#ffffff',
+    cardRadius: 16,
+    columns: 3,
+    gap: 24
   }
 }
 
@@ -143,6 +161,18 @@ export const editableFieldsMap = {
     logoText: { label: "Logo", type: "text" },
     description: { label: "Description", type: "textarea" },
     copyright: { label: "Copyright", type: "text" }
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MODULES EDITABLE FIELDS
+  // ═══════════════════════════════════════════════════════════════════════════
+  booking: {
+    title: { label: "Titre", type: "text" },
+    subtitle: { label: "Sous-titre", type: "textarea" },
+    buttonText: { label: "Texte du bouton", type: "text" }
+  },
+  ecommerce: {
+    title: { label: "Titre", type: "text" },
+    subtitle: { label: "Sous-titre", type: "textarea" }
   }
 }
 
@@ -277,6 +307,37 @@ export const siteTemplate = {
           { id: "legalLinks", type: "array", label: "Liens légaux" }
         ]
       }
+    ],
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MODULES - Extensions optionnelles
+    // ═══════════════════════════════════════════════════════════════════════════
+    modules: [
+      {
+        id: "booking",
+        name: "Réservation",
+        icon: "📅",
+        description: "Permettez à vos clients de réserver en ligne",
+        fields: [
+          { id: "enabled", type: "toggle", label: "Module actif" },
+          { id: "title", type: "text", label: "Titre" },
+          { id: "subtitle", type: "textarea", label: "Sous-titre" },
+          { id: "services", type: "array", label: "Services réservables" },
+          { id: "buttonText", type: "text", label: "Texte du bouton" }
+        ]
+      },
+      {
+        id: "ecommerce",
+        name: "E-commerce",
+        icon: "🛒",
+        description: "Vendez vos produits en ligne",
+        fields: [
+          { id: "enabled", type: "toggle", label: "Module actif" },
+          { id: "title", type: "text", label: "Titre" },
+          { id: "subtitle", type: "textarea", label: "Sous-titre" },
+          { id: "products", type: "array", label: "Produits" },
+          { id: "showPrices", type: "toggle", label: "Afficher les prix" }
+        ]
+      }
     ]
   }
 }
@@ -291,6 +352,8 @@ export function generateDefaultContent(siteName, siteSlug) {
     styles: { ...defaultStyles },
     effects: { ...defaultEffects },
     images: { logo: null, heroBackground: null, favicon: null },
+    // Ordre des sections (permet le drag & drop)
+    sectionOrder: ['header', 'hero', 'services', 'about', 'testimonials', 'faq', 'cta', 'contact', 'footer'],
     header: {
       enabled: true,
       logoText: siteName,
@@ -401,6 +464,33 @@ export function generateDefaultContent(siteName, siteSlug) {
         { id: "ll2", label: "Confidentialité", url: "/confidentialite" }
       ],
       styles: { ...defaultSectionStyles.footer }
+    },
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MODULES - Désactivés par défaut
+    // ═══════════════════════════════════════════════════════════════════════════
+    booking: {
+      enabled: false,
+      isModule: true,
+      title: "Réservation en ligne",
+      subtitle: "Choisissez votre créneau et réservez en quelques clics",
+      buttonText: "Réserver maintenant",
+      services: [
+        { id: "b1", name: "Consultation", duration: "30 min", price: "50€", description: "Consultation standard" },
+        { id: "b2", name: "Séance complète", duration: "1h", price: "80€", description: "Séance approfondie" }
+      ],
+      styles: { ...defaultSectionStyles.booking }
+    },
+    ecommerce: {
+      enabled: false,
+      isModule: true,
+      title: "Notre Boutique",
+      subtitle: "Découvrez nos produits",
+      showPrices: true,
+      products: [
+        { id: "p1", name: "Produit 1", price: "29€", description: "Description du produit", image: null, inStock: true },
+        { id: "p2", name: "Produit 2", price: "49€", description: "Description du produit", image: null, inStock: true }
+      ],
+      styles: { ...defaultSectionStyles.ecommerce }
     }
   }
 }

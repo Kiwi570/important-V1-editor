@@ -675,6 +675,41 @@ export default function PublicSite() {
   const content = site.published_content || site.draft_content
   const { theme, styles } = content
 
+  // Composants de section disponibles
+  const sectionComponents = {
+    header: <PublicHeader data={content.header} theme={theme} styles={styles} />,
+    hero: <PublicHero data={content.hero} theme={theme} styles={styles} />,
+    services: <PublicServices data={content.services} theme={theme} styles={styles} />,
+    about: <PublicAbout data={content.about} theme={theme} styles={styles} />,
+    testimonials: <PublicTestimonials data={content.testimonials} theme={theme} styles={styles} />,
+    faq: <PublicFAQ data={content.faq} theme={theme} styles={styles} />,
+    cta: <PublicCTA data={content.cta} theme={theme} styles={styles} />,
+    contact: <PublicContact data={content.contact} theme={theme} styles={styles} />,
+    footer: <PublicFooter data={content.footer} theme={theme} styles={styles} />,
+    // Modules
+    booking: <PublicBooking data={content.booking} theme={theme} styles={styles} />,
+    ecommerce: <PublicEcommerce data={content.ecommerce} theme={theme} styles={styles} />
+  }
+
+  // Ordre des sections (par défaut ou personnalisé)
+  const defaultOrder = ['header', 'hero', 'services', 'about', 'testimonials', 'faq', 'cta', 'contact', 'footer']
+  let sectionOrder = [...(content.sectionOrder || defaultOrder)]
+  
+  // Modules disponibles
+  const availableModules = ['booking', 'ecommerce']
+  
+  // Ajouter les modules activés qui ne sont pas encore dans l'ordre (avant footer)
+  availableModules.forEach(moduleId => {
+    if (content[moduleId]?.enabled && !sectionOrder.includes(moduleId)) {
+      const footerIndex = sectionOrder.indexOf('footer')
+      if (footerIndex !== -1) {
+        sectionOrder.splice(footerIndex, 0, moduleId)
+      } else {
+        sectionOrder.push(moduleId)
+      }
+    }
+  })
+
   return (
     <div className="min-h-screen">
       {/* Edit Banner (visible only in preview mode) */}
@@ -688,16 +723,140 @@ export default function PublicSite() {
         </Link>
       </div>
 
-      {/* Site Content */}
-      <PublicHeader data={content.header} theme={theme} styles={styles} />
-      <PublicHero data={content.hero} theme={theme} styles={styles} />
-      <PublicServices data={content.services} theme={theme} styles={styles} />
-      <PublicAbout data={content.about} theme={theme} styles={styles} />
-      <PublicTestimonials data={content.testimonials} theme={theme} styles={styles} />
-      <PublicFAQ data={content.faq} theme={theme} styles={styles} />
-      <PublicCTA data={content.cta} theme={theme} styles={styles} />
-      <PublicContact data={content.contact} theme={theme} styles={styles} />
-      <PublicFooter data={content.footer} theme={theme} styles={styles} />
+      {/* Site Content - Ordre dynamique */}
+      {sectionOrder.map((sectionId) => {
+        // Vérifier si la section est activée
+        if (content[sectionId]?.enabled === false) return null
+        // Pour les modules, vérifier explicitement s'ils sont activés
+        if (['booking', 'ecommerce'].includes(sectionId) && !content[sectionId]?.enabled) return null
+        
+        return (
+          <div key={sectionId}>
+            {sectionComponents[sectionId]}
+          </div>
+        )
+      })}
     </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE: BOOKING - Public
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PublicBooking({ data, theme, styles }) {
+  if (!data?.enabled) return null
+  
+  const primary = theme?.primaryColor || '#2D5A3D'
+  const sectionStyles = data.styles || {}
+  const bgColor = sectionStyles.background?.color || '#f9fafb'
+  const cardRadius = sectionStyles.cardRadius || 16
+  const padding = sectionStyles.padding?.vertical || 80
+
+  return (
+    <section id="booking" style={{ backgroundColor: bgColor, padding: `${padding}px 0` }}>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{data.title || 'Réservation en ligne'}</h2>
+          <p className="text-lg text-gray-600">{data.subtitle || 'Choisissez votre créneau'}</p>
+        </div>
+
+        {/* Services Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {data.services?.map((service, index) => (
+            <div 
+              key={service.id || index}
+              className="bg-white p-6 shadow-md hover:shadow-lg transition-shadow"
+              style={{ borderRadius: `${cardRadius}px` }}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{service.name}</h3>
+                  <p className="text-sm text-gray-500">{service.duration}</p>
+                </div>
+                <span className="text-lg font-bold" style={{ color: primary }}>{service.price}</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">{service.description}</p>
+              <button 
+                className="w-full py-2 text-white font-medium rounded-lg hover:opacity-90 transition"
+                style={{ backgroundColor: primary }}
+              >
+                Réserver
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <button 
+            className="px-8 py-3 text-white font-medium rounded-xl hover:opacity-90 transition"
+            style={{ backgroundColor: primary }}
+          >
+            {data.buttonText || 'Voir tous les créneaux'}
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE: E-COMMERCE - Public
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PublicEcommerce({ data, theme, styles }) {
+  if (!data?.enabled) return null
+  
+  const primary = theme?.primaryColor || '#2D5A3D'
+  const sectionStyles = data.styles || {}
+  const bgColor = sectionStyles.background?.color || '#ffffff'
+  const cardRadius = sectionStyles.cardRadius || 16
+  const padding = sectionStyles.padding?.vertical || 80
+
+  return (
+    <section id="ecommerce" style={{ backgroundColor: bgColor, padding: `${padding}px 0` }}>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{data.title || 'Notre Boutique'}</h2>
+          <p className="text-lg text-gray-600">{data.subtitle || 'Découvrez nos produits'}</p>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.products?.map((product, index) => (
+            <div 
+              key={product.id || index}
+              className="bg-white border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
+              style={{ borderRadius: `${cardRadius}px` }}
+            >
+              {/* Product Image Placeholder */}
+              <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                <LucideIcons.Package className="w-16 h-16 text-gray-300" />
+              </div>
+              
+              {/* Product Info */}
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                  {data.showPrices && (
+                    <span className="text-lg font-bold" style={{ color: primary }}>{product.price}</span>
+                  )}
+                </div>
+                <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+                <button 
+                  className="w-full py-2 text-white font-medium rounded-lg hover:opacity-90 transition"
+                  style={{ backgroundColor: primary }}
+                >
+                  Ajouter au panier
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }

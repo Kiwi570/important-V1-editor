@@ -270,7 +270,16 @@ export default function SectionEditor() {
     )
   }
 
-  const sectionSchema = schema.sections?.find(s => s.id === activeSection)
+  // Chercher dans les sections ET les modules
+  let sectionSchema = schema.sections?.find(s => s.id === activeSection)
+  let isModule = false
+  
+  // Si pas trouvé dans les sections, chercher dans les modules
+  if (!sectionSchema && schema.modules) {
+    sectionSchema = schema.modules.find(m => m.id === activeSection)
+    isModule = true
+  }
+  
   const sectionData = draftContent[activeSection] || {}
 
   if (!sectionSchema) {
@@ -317,6 +326,12 @@ export default function SectionEditor() {
       items.push('Nouvelle zone')
       updateField(activeSection, fieldId, items)
       return
+    } else if (type === 'bookingServices') {
+      // Module Booking - services réservables
+      Object.assign(newItem, { name: 'Nouveau service', duration: '30 min', price: '50€', description: '' })
+    } else if (type === 'products') {
+      // Module E-commerce - produits
+      Object.assign(newItem, { name: 'Nouveau produit', price: '29€', description: '', image: null, inStock: true })
     }
     
     items.push(newItem)
@@ -348,19 +363,33 @@ export default function SectionEditor() {
     if (fieldId === 'socials') return 'socials'
     if (fieldId === 'legalLinks') return 'legalLinks'
     if (fieldId === 'locations') return 'locations'
+    // Modules
+    if (sectionId === 'booking' && fieldId === 'services') return 'bookingServices'
+    if (sectionId === 'ecommerce' && fieldId === 'products') return 'products'
     return 'generic'
   }
 
   return (
     <div className="h-full overflow-y-auto">
       {/* Section Header */}
-      <div className="sticky top-0 z-10 px-4 py-3 bg-gray-900/95 backdrop-blur border-b border-gray-700">
+      <div className={`sticky top-0 z-10 px-4 py-3 backdrop-blur border-b ${
+        isModule 
+          ? 'bg-purple-900/95 border-purple-700' 
+          : 'bg-gray-900/95 border-gray-700'
+      }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{sectionSchema.icon}</span>
             <div>
-              <h3 className="font-semibold text-white">{sectionSchema.name}</h3>
-              <p className="text-xs text-gray-500">{activeSection}</p>
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                {sectionSchema.name}
+                {isModule && (
+                  <span className="text-[10px] bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full">
+                    MODULE
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-gray-500">{sectionSchema.description || activeSection}</p>
             </div>
           </div>
           <ToggleField

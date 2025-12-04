@@ -577,6 +577,82 @@ function FAQDesign({ sectionData, styles, onStyleChange, theme }) {
   )
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE DESIGN EDITOR
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ModuleDesign({ sectionData, styles, onStyleChange, theme, moduleName, moduleColor }) {
+  const colorSchemes = {
+    blue: { primary: '#3b82f6', light: '#dbeafe' },
+    orange: { primary: '#f97316', light: '#ffedd5' }
+  }
+  const colors = colorSchemes[moduleColor] || colorSchemes.blue
+
+  return (
+    <div className="space-y-4">
+      {/* Module Info Banner */}
+      <div className={`p-3 rounded-xl border ${
+        moduleColor === 'blue' 
+          ? 'bg-blue-500/10 border-blue-500/20' 
+          : 'bg-orange-500/10 border-orange-500/20'
+      }`}>
+        <p className={`text-sm font-medium ${
+          moduleColor === 'blue' ? 'text-blue-400' : 'text-orange-400'
+        }`}>
+          📦 Module {moduleName}
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Personnalisez l'apparence de ce module
+        </p>
+      </div>
+
+      <CollapsibleSection title="Fond de section" icon={Palette}>
+        <ColorPickerMini 
+          label="Couleur"
+          color={styles?.background?.color || '#f9fafb'} 
+          onChange={(color) => onStyleChange('background', { ...styles?.background, color })}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Espacement" icon={Layout} defaultOpen={false}>
+        <SliderControl
+          label="Padding vertical"
+          value={styles?.padding?.vertical || 80}
+          onChange={(v) => onStyleChange('padding', { ...styles?.padding, vertical: v })}
+          min={40}
+          max={160}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Cartes" icon={Box} defaultOpen={false}>
+        <ColorPickerMini 
+          label="Fond carte"
+          color={styles?.cardBg || '#ffffff'} 
+          onChange={(color) => onStyleChange('cardBg', color)}
+        />
+        <SliderControl
+          label="Arrondi"
+          value={styles?.cardRadius || 16}
+          onChange={(v) => onStyleChange('cardRadius', v)}
+          min={0}
+          max={32}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Couleur d'accent" icon={Sparkles} defaultOpen={false}>
+        <ColorPickerMini 
+          label="Accent"
+          color={styles?.accentColor || theme?.primaryColor || '#2D5A3D'} 
+          onChange={(color) => onStyleChange('accentColor', color)}
+        />
+        <p className="text-xs text-gray-500 mt-2">
+          Utilisé pour les boutons et éléments interactifs
+        </p>
+      </CollapsibleSection>
+    </div>
+  )
+}
+
 function GenericDesign({ sectionData, styles, onStyleChange, theme, sectionName }) {
   return (
     <div className="space-y-4">
@@ -643,7 +719,15 @@ export default function SectionDesignEditor() {
     )
   }
 
-  const sectionSchema = schema.sections?.find(s => s.id === activeSection)
+  // Chercher dans les sections ET les modules
+  let sectionSchema = schema.sections?.find(s => s.id === activeSection)
+  let isModule = false
+  
+  if (!sectionSchema && schema.modules) {
+    sectionSchema = schema.modules.find(m => m.id === activeSection)
+    isModule = true
+  }
+  
   const sectionData = draftContent[activeSection] || {}
   const sectionStyles = sectionData.styles || {}
   const theme = draftContent.theme || {}
@@ -674,6 +758,11 @@ export default function SectionDesignEditor() {
         return <TestimonialsDesign {...props} />
       case 'faq':
         return <FAQDesign {...props} />
+      // Modules
+      case 'booking':
+        return <ModuleDesign {...props} moduleName="Réservation" moduleColor="blue" />
+      case 'ecommerce':
+        return <ModuleDesign {...props} moduleName="E-commerce" moduleColor="orange" />
       case 'about':
       case 'cta':
       case 'contact':
@@ -686,13 +775,28 @@ export default function SectionDesignEditor() {
   return (
     <div className="h-full overflow-y-auto">
       {/* Section Header */}
-      <div className="sticky top-0 z-10 px-4 py-3 bg-gray-900/95 backdrop-blur border-b border-gray-700">
+      <div className={`sticky top-0 z-10 px-4 py-3 backdrop-blur border-b ${
+        isModule 
+          ? 'bg-purple-900/95 border-purple-700' 
+          : 'bg-gray-900/95 border-gray-700'
+      }`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            isModule 
+              ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+              : 'bg-gradient-to-br from-purple-500 to-pink-500'
+          }`}>
             <Palette className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Design : {sectionSchema?.name}</h3>
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              Design : {sectionSchema?.name || activeSection}
+              {isModule && (
+                <span className="text-[10px] bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full">
+                  MODULE
+                </span>
+              )}
+            </h3>
             <p className="text-xs text-gray-500">Personnalisez l'apparence de cette section</p>
           </div>
         </div>

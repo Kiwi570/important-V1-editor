@@ -729,12 +729,16 @@ export default function LivePreview() {
   const { theme, styles } = displayContent
 
   // Section wrapper with highlight
-  const SectionWrapper = ({ id, children }) => (
+  const SectionWrapper = ({ id, children, isModule = false }) => (
     <div className={`relative transition-all duration-300 ${
-      activeSection === id ? 'ring-2 ring-green-500/50 ring-inset' : ''
+      activeSection === id 
+        ? isModule 
+          ? 'ring-2 ring-purple-500/50 ring-inset' 
+          : 'ring-2 ring-green-500/50 ring-inset' 
+        : ''
     } ${previewOverride?.section === id ? 'ring-2 ring-purple-500 ring-inset' : ''}`}>
       {activeSection === id && !previewOverride && (
-        <div className="absolute top-2 right-2 z-10 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
+        <div className={`absolute top-2 right-2 z-10 ${isModule ? 'bg-purple-500' : 'bg-green-500'} text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg`}>
           ✏️ En cours
         </div>
       )}
@@ -756,18 +760,198 @@ export default function LivePreview() {
     faq: <PreviewFAQ data={displayContent.faq} theme={theme} styles={styles} />,
     cta: <PreviewCTA data={displayContent.cta} theme={theme} styles={styles} />,
     contact: <PreviewContact data={displayContent.contact} theme={theme} styles={styles} />,
-    footer: <PreviewFooter data={displayContent.footer} theme={theme} styles={styles} />
+    footer: <PreviewFooter data={displayContent.footer} theme={theme} styles={styles} />,
+    // Modules
+    booking: <PreviewBooking data={displayContent.booking} theme={theme} styles={styles} />,
+    ecommerce: <PreviewEcommerce data={displayContent.ecommerce} theme={theme} styles={styles} />
   }
 
-  const sectionOrder = ['header', 'hero', 'services', 'about', 'testimonials', 'faq', 'cta', 'contact', 'footer']
+  // Utiliser l'ordre dynamique des sections (incluant les modules activés)
+  const defaultOrder = ['header', 'hero', 'services', 'about', 'testimonials', 'faq', 'cta', 'contact', 'footer']
+  let sectionOrder = [...(displayContent.sectionOrder || defaultOrder)]
+  
+  // Modules disponibles
+  const availableModules = ['booking', 'ecommerce']
+  
+  // Ajouter les modules activés qui ne sont pas encore dans l'ordre (avant footer)
+  availableModules.forEach(moduleId => {
+    if (displayContent[moduleId]?.enabled && !sectionOrder.includes(moduleId)) {
+      const footerIndex = sectionOrder.indexOf('footer')
+      if (footerIndex !== -1) {
+        sectionOrder.splice(footerIndex, 0, moduleId)
+      } else {
+        sectionOrder.push(moduleId)
+      }
+    }
+  })
 
   return (
     <div className="h-full bg-white overflow-y-auto">
-      {sectionOrder.map((sectionId) => (
-        <SectionWrapper key={sectionId} id={sectionId}>
-          {sectionComponents[sectionId]}
-        </SectionWrapper>
-      ))}
+      {sectionOrder.map((sectionId) => {
+        const isModule = availableModules.includes(sectionId)
+        // Vérifier si la section/module est activé
+        if (displayContent[sectionId]?.enabled === false) return null
+        if (isModule && !displayContent[sectionId]?.enabled) return null
+        
+        return (
+          <SectionWrapper key={sectionId} id={sectionId} isModule={isModule}>
+            {sectionComponents[sectionId]}
+          </SectionWrapper>
+        )
+      })}
     </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE: BOOKING - Placeholder
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PreviewBooking({ data, theme, styles }) {
+  if (!data?.enabled) return null
+  
+  const primary = theme?.primaryColor || '#2D5A3D'
+  const sectionStyles = data.styles || {}
+  const bgColor = sectionStyles.background?.color || '#f9fafb'
+  const cardRadius = sectionStyles.cardRadius || 16
+  const padding = sectionStyles.padding?.vertical || 80
+
+  return (
+    <section id="booking" style={{ backgroundColor: bgColor, padding: `${padding}px 0` }}>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <EditableElement section="booking" field="title" label="Titre">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{data.title || 'Réservation en ligne'}</h2>
+          </EditableElement>
+          <EditableElement section="booking" field="subtitle" label="Sous-titre">
+            <p className="text-lg text-gray-600">{data.subtitle || 'Choisissez votre créneau'}</p>
+          </EditableElement>
+        </div>
+
+        {/* Services Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {data.services?.map((service, index) => (
+            <div 
+              key={service.id || index}
+              className="bg-white p-6 shadow-md hover:shadow-lg transition-shadow"
+              style={{ borderRadius: `${cardRadius}px` }}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{service.name}</h3>
+                  <p className="text-sm text-gray-500">{service.duration}</p>
+                </div>
+                <span className="text-lg font-bold" style={{ color: primary }}>{service.price}</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">{service.description}</p>
+              <button 
+                className="w-full py-2 text-white font-medium rounded-lg hover:opacity-90 transition"
+                style={{ backgroundColor: primary }}
+              >
+                Réserver
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <EditableElement section="booking" field="buttonText" label="Texte du bouton">
+            <button 
+              className="px-8 py-3 text-white font-medium rounded-xl hover:opacity-90 transition"
+              style={{ backgroundColor: primary }}
+            >
+              {data.buttonText || 'Voir tous les créneaux'}
+            </button>
+          </EditableElement>
+        </div>
+
+        {/* Coming Soon Badge */}
+        <div className="mt-8 text-center">
+          <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm">
+            <LucideIcons.Calendar className="w-4 h-4" />
+            Module en préparation - Aperçu
+          </span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE: E-COMMERCE - Placeholder
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PreviewEcommerce({ data, theme, styles }) {
+  if (!data?.enabled) return null
+  
+  const primary = theme?.primaryColor || '#2D5A3D'
+  const sectionStyles = data.styles || {}
+  const bgColor = sectionStyles.background?.color || '#ffffff'
+  const cardRadius = sectionStyles.cardRadius || 16
+  const padding = sectionStyles.padding?.vertical || 80
+  const columns = sectionStyles.columns || 3
+
+  return (
+    <section id="ecommerce" style={{ backgroundColor: bgColor, padding: `${padding}px 0` }}>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <EditableElement section="ecommerce" field="title" label="Titre">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{data.title || 'Notre Boutique'}</h2>
+          </EditableElement>
+          <EditableElement section="ecommerce" field="subtitle" label="Sous-titre">
+            <p className="text-lg text-gray-600">{data.subtitle || 'Découvrez nos produits'}</p>
+          </EditableElement>
+        </div>
+
+        {/* Products Grid */}
+        <div className={`grid md:grid-cols-2 lg:grid-cols-${columns} gap-6 mb-8`}>
+          {data.products?.map((product, index) => (
+            <div 
+              key={product.id || index}
+              className="bg-white border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group"
+              style={{ borderRadius: `${cardRadius}px` }}
+            >
+              {/* Product Image Placeholder */}
+              <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                <LucideIcons.Package className="w-16 h-16 text-gray-300" />
+              </div>
+              
+              {/* Product Info */}
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                  {data.showPrices && (
+                    <span className="text-lg font-bold" style={{ color: primary }}>{product.price}</span>
+                  )}
+                </div>
+                <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+                <div className="flex gap-2">
+                  <button 
+                    className="flex-1 py-2 text-white font-medium rounded-lg hover:opacity-90 transition"
+                    style={{ backgroundColor: primary }}
+                  >
+                    Ajouter
+                  </button>
+                  <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <LucideIcons.Heart className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Coming Soon Badge */}
+        <div className="text-center">
+          <span className="inline-flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm">
+            <LucideIcons.ShoppingCart className="w-4 h-4" />
+            Module en préparation - Aperçu
+          </span>
+        </div>
+      </div>
+    </section>
   )
 }

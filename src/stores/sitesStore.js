@@ -288,7 +288,7 @@ export const useSitesStore = create(
     }),
     {
       name: 'universal-editor-sites-v2',
-      version: 3, // Bump version to trigger migration
+      version: 4, // Bump version to add modules
       migrate: (persistedState, version) => {
         // Migration pour ajouter les styles de section manquants
         if (version < 3 && persistedState?.sites) {
@@ -316,15 +316,64 @@ export const useSitesStore = create(
             }
           })
         }
+        
+        // Migration v4: Ajouter les modules aux sites existants
+        if (version < 4 && persistedState?.sites) {
+          Object.keys(persistedState.sites).forEach(slug => {
+            const site = persistedState.sites[slug]
+            
+            // Mettre à jour le schéma pour inclure les modules
+            site.schema = siteTemplate.schema
+            
+            // Ajouter les modules au draft_content s'ils n'existent pas
+            if (site.draft_content && !site.draft_content.booking) {
+              site.draft_content.booking = {
+                enabled: false,
+                isModule: true,
+                title: "Réservation en ligne",
+                subtitle: "Choisissez votre créneau et réservez en quelques clics",
+                buttonText: "Réserver maintenant",
+                services: [
+                  { id: "b1", name: "Consultation", duration: "30 min", price: "50€", description: "Consultation standard" },
+                  { id: "b2", name: "Séance complète", duration: "1h", price: "80€", description: "Séance approfondie" }
+                ],
+                styles: { ...defaultSectionStyles.booking }
+              }
+            }
+            
+            if (site.draft_content && !site.draft_content.ecommerce) {
+              site.draft_content.ecommerce = {
+                enabled: false,
+                isModule: true,
+                title: "Notre Boutique",
+                subtitle: "Découvrez nos produits",
+                showPrices: true,
+                products: [
+                  { id: "p1", name: "Produit 1", price: "29€", description: "Description du produit", image: null, inStock: true },
+                  { id: "p2", name: "Produit 2", price: "49€", description: "Description du produit", image: null, inStock: true }
+                ],
+                styles: { ...defaultSectionStyles.ecommerce }
+              }
+            }
+            
+            // Même chose pour published_content
+            if (site.published_content && !site.published_content.booking) {
+              site.published_content.booking = { ...site.draft_content.booking }
+            }
+            if (site.published_content && !site.published_content.ecommerce) {
+              site.published_content.ecommerce = { ...site.draft_content.ecommerce }
+            }
+          })
+        }
+        
         return persistedState
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
           const sites = state.sites || {}
           Object.keys(sites).forEach(slug => {
-            if (!sites[slug].schema) {
-              sites[slug].schema = siteTemplate.schema
-            }
+            // Toujours mettre à jour le schéma pour avoir les dernières sections/modules
+            sites[slug].schema = siteTemplate.schema
           })
         }
       }
