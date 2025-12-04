@@ -618,17 +618,41 @@ function PublicFooter({ data, theme, styles }) {
 
 export default function PublicSite() {
   const { slug } = useParams()
-  const { getSite, initializeSites } = useSitesStore()
+  const { getSite, initializeSites, sites, isLoaded } = useSitesStore()
   const [site, setSite] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Initialiser le store
   useEffect(() => {
     initializeSites()
   }, [initializeSites])
 
+  // Chercher le site APRÈS que le store soit chargé
   useEffect(() => {
-    const loadedSite = getSite(slug)
-    setSite(loadedSite)
-  }, [slug, getSite])
+    if (isLoaded) {
+      const loadedSite = getSite(slug)
+      setSite(loadedSite)
+      setIsLoading(false)
+    }
+  }, [slug, getSite, isLoaded, sites])
+
+  // État de chargement
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div 
+            className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <LucideIcons.Loader className="w-8 h-8 text-white" />
+          </motion.div>
+          <p className="text-gray-400">Chargement du site...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!site) {
     return (
