@@ -6,6 +6,8 @@ import {
   Type, Link as LinkIcon, Image, Hash, Star, ToggleLeft, List
 } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
+import BookingModuleEditor from './BookingEditor'
+import EcommerceModuleEditor from '../modules/ecommerce/EcommerceEditor'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FIELD EDITORS
@@ -401,6 +403,11 @@ export default function SectionEditor() {
       </div>
 
       {/* Fields */}
+      {activeSection === 'booking' ? (
+        <BookingModuleEditor />
+      ) : activeSection === 'ecommerce' ? (
+        <EcommerceModuleEditor />
+      ) : (
       <div className="p-4 space-y-4">
         {sectionSchema.fields?.map((field) => {
           // Skip enabled field (handled in header)
@@ -519,11 +526,41 @@ export default function SectionEditor() {
                   onChange={(v) => handleFieldUpdate(field.id, v)}
                 />
               )
+            // ═══════════════════════════════════════════════════════════════
+            // MODULE BOOKING - Champs spéciaux
+            // ═══════════════════════════════════════════════════════════════
+            case 'bookingServices':
+              return (
+                <BookingServicesEditor
+                  key={field.id}
+                  services={value || []}
+                  onChange={(v) => handleFieldUpdate(field.id, v)}
+                />
+              )
+            case 'openingHours':
+              return (
+                <OpeningHoursEditor
+                  key={field.id}
+                  hours={value || {}}
+                  onChange={(v) => handleFieldUpdate(field.id, v)}
+                />
+              )
+            case 'select':
+              return (
+                <SelectField
+                  key={field.id}
+                  label={field.label}
+                  value={value}
+                  options={field.options || []}
+                  onChange={(v) => handleFieldUpdate(field.id, v)}
+                />
+              )
             default:
               return null
           }
         })}
       </div>
+      )}
     </div>
   )
 }

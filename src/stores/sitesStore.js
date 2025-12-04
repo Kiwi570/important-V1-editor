@@ -288,7 +288,7 @@ export const useSitesStore = create(
     }),
     {
       name: 'universal-editor-sites-v2',
-      version: 4, // Bump version to add modules
+      version: 6, // Bump version for premium booking module
       migrate: (persistedState, version) => {
         // Migration pour ajouter les styles de section manquants
         if (version < 3 && persistedState?.sites) {
@@ -362,6 +362,159 @@ export const useSitesStore = create(
             }
             if (site.published_content && !site.published_content.ecommerce) {
               site.published_content.ecommerce = { ...site.draft_content.ecommerce }
+            }
+          })
+        }
+        
+        // Migration v5: Enrichir les modules avec les nouveaux champs
+        if (version < 5 && persistedState?.sites) {
+          Object.keys(persistedState.sites).forEach(slug => {
+            const site = persistedState.sites[slug]
+            
+            // Enrichir le module booking
+            if (site.draft_content?.booking) {
+              const booking = site.draft_content.booking
+              // Ajouter les nouveaux champs s'ils n'existent pas
+              if (!booking.timeSlotDuration) booking.timeSlotDuration = 30
+              if (booking.showCalendar === undefined) booking.showCalendar = true
+              if (booking.showTimeSlots === undefined) booking.showTimeSlots = true
+              if (booking.requirePhone === undefined) booking.requirePhone = true
+              if (booking.requireMessage === undefined) booking.requireMessage = false
+              if (!booking.confirmationTitle) booking.confirmationTitle = "Réservation confirmée ! 🎉"
+              if (!booking.confirmationMessage) booking.confirmationMessage = "Merci pour votre réservation. Vous recevrez un email de confirmation."
+              if (!booking.openingHours) {
+                booking.openingHours = {
+                  monday: { enabled: true, start: "09:00", end: "18:00" },
+                  tuesday: { enabled: true, start: "09:00", end: "18:00" },
+                  wednesday: { enabled: true, start: "09:00", end: "18:00" },
+                  thursday: { enabled: true, start: "09:00", end: "18:00" },
+                  friday: { enabled: true, start: "09:00", end: "17:00" },
+                  saturday: { enabled: false, start: "10:00", end: "13:00" },
+                  sunday: { enabled: false, start: "", end: "" }
+                }
+              }
+              // Enrichir les services existants
+              if (booking.services) {
+                booking.services = booking.services.map((service, i) => ({
+                  ...service,
+                  icon: service.icon || 'Star',
+                  color: service.color || ['#10b981', '#3b82f6', '#8b5cf6'][i % 3],
+                  duration: typeof service.duration === 'string' ? parseInt(service.duration) || 30 : service.duration,
+                  price: typeof service.price === 'string' ? parseFloat(service.price) || 0 : service.price,
+                  priceLabel: service.priceLabel || (service.price === 0 || service.price === '0€' ? 'Gratuit' : service.price)
+                }))
+              }
+            }
+            
+            // Enrichir le module ecommerce
+            if (site.draft_content?.ecommerce) {
+              const ecom = site.draft_content.ecommerce
+              if (ecom.showStock === undefined) ecom.showStock = true
+              if (ecom.showRatings === undefined) ecom.showRatings = true
+              if (ecom.showFilters === undefined) ecom.showFilters = true
+              if (ecom.showSearch === undefined) ecom.showSearch = true
+              if (!ecom.columns) ecom.columns = 3
+              if (!ecom.cartButtonText) ecom.cartButtonText = "Ajouter au panier"
+              if (!ecom.emptyCartMessage) ecom.emptyCartMessage = "Votre panier est vide"
+              if (!ecom.categories) {
+                ecom.categories = [
+                  { id: "cat1", name: "Tous", icon: "Grid" },
+                  { id: "cat2", name: "Nouveautés", icon: "Sparkles" }
+                ]
+              }
+            }
+            
+            // Appliquer les mêmes modifications au published_content
+            if (site.published_content?.booking) {
+              Object.assign(site.published_content.booking, site.draft_content.booking)
+            }
+            if (site.published_content?.ecommerce) {
+              Object.assign(site.published_content.ecommerce, site.draft_content.ecommerce)
+            }
+          })
+        }
+        
+        // Migration v6: Module Booking Premium avec données enrichies
+        if (version < 6 && persistedState?.sites) {
+          Object.keys(persistedState.sites).forEach(slug => {
+            const site = persistedState.sites[slug]
+            
+            if (site.draft_content?.booking) {
+              const booking = site.draft_content.booking
+              
+              // Ajouter les nouveaux champs premium
+              if (!booking.badge) booking.badge = "✨ Réservation instantanée"
+              if (!booking.showSteps) booking.showSteps = true
+              if (!booking.timeSlots) {
+                booking.timeSlots = ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"]
+              }
+              if (!booking.formTitle) booking.formTitle = "Vos coordonnées"
+              if (!booking.formSubtitle) booking.formSubtitle = "Pour confirmer votre réservation"
+              if (!booking.fields) {
+                booking.fields = {
+                  firstName: { show: true, required: true, label: "Prénom", placeholder: "Votre prénom" },
+                  lastName: { show: true, required: true, label: "Nom", placeholder: "Votre nom" },
+                  email: { show: true, required: true, label: "Email", placeholder: "votre@email.com" },
+                  phone: { show: true, required: true, label: "Téléphone", placeholder: "06 00 00 00 00" },
+                  message: { show: true, required: false, label: "Message (optionnel)", placeholder: "Une information à nous communiquer ?" }
+                }
+              }
+              if (!booking.buttonIcon) booking.buttonIcon = "Calendar"
+              if (!booking.confirmationSubtitle) booking.confirmationSubtitle = "Merci pour votre confiance"
+              if (!booking.confirmationIcon) booking.confirmationIcon = "CheckCircle"
+              if (booking.showGuarantees === undefined) booking.showGuarantees = true
+              if (!booking.guarantees) {
+                booking.guarantees = [
+                  { icon: "Shield", text: "Paiement sur place" },
+                  { icon: "Clock", text: "Annulation gratuite 24h" },
+                  { icon: "Star", text: "4.9/5 (120+ avis)" }
+                ]
+              }
+              
+              // Enrichir les services existants avec les nouvelles propriétés
+              if (booking.services) {
+                const defaultColors = ['#10b981', '#8b5cf6', '#f59e0b', '#ec4899']
+                booking.services = booking.services.map((service, i) => ({
+                  ...service,
+                  icon: service.icon || 'Star',
+                  color: service.color || defaultColors[i % defaultColors.length],
+                  duration: typeof service.duration === 'string' ? parseInt(service.duration) || 60 : (service.duration || 60),
+                  price: typeof service.price === 'string' ? parseFloat(service.price) || 0 : (service.price || 0),
+                  priceLabel: service.priceLabel || (service.price === 0 ? 'Offert' : `${service.price} €`),
+                  popular: service.popular || false
+                }))
+              }
+              
+              // Copier vers published_content
+              if (site.published_content?.booking) {
+                site.published_content.booking = { ...booking }
+              }
+            }
+            
+            // Migration E-commerce Premium
+            if (site.draft_content?.ecommerce) {
+              const ecom = site.draft_content.ecommerce
+              
+              // Ajouter les nouveaux champs
+              if (!ecom.badge) ecom.badge = "🚚 Livraison offerte dès 50€"
+              if (ecom.showFloatingCart === undefined) ecom.showFloatingCart = true
+              if (ecom.enableQuickView === undefined) ecom.enableQuickView = true
+              if (!ecom.cardStyle) ecom.cardStyle = 'default'
+              
+              // Enrichir les produits existants
+              if (ecom.products) {
+                const badgeColors = { 'Nouveau': '#3b82f6', 'Best-seller': '#10b981', 'Promo': '#ef4444' }
+                ecom.products = ecom.products.map(product => ({
+                  ...product,
+                  priceLabel: product.priceLabel || `${product.price} €`,
+                  badgeColor: product.badgeColor || badgeColors[product.badge] || '#8b5cf6'
+                }))
+              }
+              
+              // Copier vers published_content
+              if (site.published_content?.ecommerce) {
+                site.published_content.ecommerce = { ...ecom }
+              }
             }
           })
         }
